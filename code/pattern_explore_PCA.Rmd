@@ -1,0 +1,176 @@
+---
+title: "pca_628"
+author: "Wanxin"
+date: "10/5/2023"
+output:
+  html_document: default
+  pdf_document: default
+---
+```{r}
+rm(list = ls())
+# Load the data
+df=read.csv('updated_data_file.csv')
+
+# Load the necessary library for PCA
+library(stats)
+
+# Standardize the data (optional but recommended for PCA)
+df_scaled <- scale(df[, -1][,-1])  # Exclude the 'BODYFAT' 'DENSITY' column and standardize
+head(df_scaled)
+```
+
+```{r}
+data_bind <- cbind(BODYFAT = df$BODYFAT, df_scaled)
+
+set.seed(12)  # for reproducibility
+split_ratio <- 0.7  # 70% training data, 30% testing data
+num_samples <- nrow(df)
+
+# Create a random index for splitting the data
+train_index <- sample(1:num_samples, round(split_ratio * num_samples))
+
+# Split the data
+train_data <- as.data.frame(data_bind[train_index, ])
+test_data <- as.data.frame(data_bind[-train_index, ])
+
+summary(test_data)
+summary(train_data)
+```
+
+```{r}
+# Perform PCA on train data
+pca_result <- prcomp(train_data[,-1], scale = TRUE)
+
+# Get the loadings for PC1 and PC2
+loadings <- pca_result$rotation[, 1:3]
+
+# Proportion of variance explained by PC1 and PC2
+variance_explained <- pca_result$sdev^2 / sum(pca_result$sdev^2)
+
+# Interpret PC1 and PC2
+interpretation_PC1 <- sum(loadings[, 1]^2)  # Variance explained by PC1
+interpretation_PC2 <- sum(loadings[, 2]^2)  # Variance explained by PC2
+interpretation_PC3 <- sum(loadings[, 3]^2)  # Variance explained by PC2
+
+
+# Print the results
+print(paste("Proportion of Variance Explained by PC1: ", round(variance_explained[1], 2)))
+print(paste("Proportion of Variance Explained by PC2: ", round(variance_explained[2], 2)))
+print(paste("Proportion of Variance Explained by PC3: ", round(variance_explained[3], 2)))
+
+
+print("Loadings for PC1, PC2 and PC3:")
+print(loadings)
+```
+
+
+```{r}
+
+# Explained variance ratio for each component
+variance_explained <- pca_result$sdev^2 / sum(pca_result$sdev^2)
+
+# Cumulative explained variance
+cumulative_variance <- cumsum(variance_explained)
+
+# Plot scree plot
+plot(cumulative_variance, type = "b", xlab = "Number of Components", ylab = "Cumulative Explained Variance")
+
+# Summary of PCA
+summary(pca_result)
+
+# Scree plot to visualize the explained variance by each principal component
+plot(pca_result, type = "l", main = "Scree Plot")
+
+# Biplot to visualize the original variables and their relationships in the PCA space
+biplot(pca_result)
+```
+
+
+```{r}
+# Keep the first 8 principal components > 95%
+num_components_to_keep <- 8  
+X_pca_train <- as.data.frame(predict(pca_result, newdata = train_data[,-1])[,1:num_components_to_keep])
+head(X_pca_train)
+
+X_pca_test <- as.data.frame(predict(pca_result, newdata = test_data[,-1])[,1:num_components_to_keep])
+head(X_pca_test)
+
+data_pca_train <- cbind(BODYFAT = train_data$BODYFAT, X_pca_train)
+data_pca_test  <- cbind(BODYFAT =  test_data$BODYFAT, X_pca_test)
+```
+
+Regression model combine PCA 
+```{r}
+# train model
+
+library(caret)  # For model building
+library(Metrics)  # For model evaluation
+library(glmnet)  # For regression model
+
+n_components <- 1:ncol(data_pca_train)
+
+# Initialize vectors to store AIC and BIC values
+aic_values <- numeric(length(n_components))
+bic_values <- numeric(length(n_components))
+
+# Loop over the candidate numbers of components
+for (i in 1:length(n_components)) {
+  
+ i=1 
+  
+  n_comp <- n_components[i]
+  
+  # Create a data frame with the selected number of components
+  pca_data <- data.frame(data_pca_train$BODYFAT, as.data.frame(pca_result$x[, 1:n_comp]))
+  head(pca_data)
+  # Fit a regression model with the selected number of components
+  model <- glm(data_pca_train.BODYFAT ~ ., data = pca_data)
+  
+  # Calculate AIC and BIC
+  aic_values[i] <- AIC(model)
+  bic_values[i] <- BIC(model)
+}
+
+# Find the optimal number of components based on AIC and BIC
+optimal_components_aic <- n_components[which.min(aic_values)]
+optimal_components_bic <- n_components[which.min(bic_values)]
+
+# Fit the final model with the optimal number of components
+final_pca_data <- data.frame(data_pca_train$BODYFAT, as.data.frame(pca_result$x[, 1:optimal_components_aic]))
+
+final_pca_data <- data.frame(data_pca_train$BODYFAT, as.data.frame(pca_result$x[, 1:3]))
+final_model <- lm(data_pca_train.BODYFAT ~ ., data = final_pca_data)
+
+# Evaluate the model as needed
+predictions <- predict(final_model, newdata = final_pca_data)
+rmse <- rmse(data_pca_train$BODYFAT, predictions)
+summary(final_model)
+```
+
+
+Evaluate the Model:
+```{r}
+model <- lm(BODYFAT ~ ., data = data_pca_train)
+# Make predictions on the test set
+predictions <- predict(model, newdata = data_pca_test[,-1])
+# Calculate Mean Squared Error (MSE)
+mse <- mean((data_pca_test$BODYFAT - predictions)^2)
+mse
+```
+
+
+<!-- Predict new data -->
+<!-- ```{r} -->
+<!-- # Assuming 'new_data' is your new dataset, excluding the 'BODYFAT' column -->
+<!-- new_data_scaled <- scale(new_data) -->
+
+
+<!-- # Assuming 'pca_result' contains the PCA results from the original dataset -->
+<!-- # Use the same number of components that you used during training -->
+<!-- num_components_to_keep <- 8  # Example: Keep the first 5 principal components -->
+
+<!-- # ??? Transform the new data into PCA space -->
+<!-- new_data_pca <- as.data.frame(predict(pca_result, newdata = new_data_scaled)[, 1:num_components_to_keep]) -->
+
+
+<!-- ``` -->

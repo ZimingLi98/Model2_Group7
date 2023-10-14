@@ -1,0 +1,273 @@
+---
+title: "Model Building"
+output: html_document
+date: "2023-10-13"
+---
+## read the data
+```{r}
+rm(list = ls())
+library(ggplot2)
+library(ggcorrplot)
+library(patchwork)
+rm(list = ls())
+path <- "data_cleaned.csv"
+da <- read.csv(path)
+da <- da[, -which(names(da) == "DENSITY")]
+# head(da)
+```
+
+## correlation matrix
+
+```{r}
+corr_matrix <- cor(da[,2:15])
+ggcorrplot(corr_matrix)
+plot <- ggcorrplot(corr_matrix)
+ggsave("correlation_plot.png", plot=plot, width=7, height=7)
+```
+
+## Train test split
+```{r}
+set.seed(123)
+n_rows <- nrow(da)
+train_size <- floor(0.7 * n_rows)
+train_indices <- sample(1:n_rows, train_size)
+
+train_data <- da[train_indices, ]
+test_data <- da[-train_indices, ]
+error_per <- function(model, test_data, test_y,n){
+  predict_y <- predict(model,test_data)
+  error<- abs(predict_y-test_y)
+  p <- sum(error<n)/length(test_y)
+  return(p)
+}
+
+train_y <- train_data$BODYFAT
+```
+
+
+## All features
+```{r}
+library(caret)
+
+ctrl <- trainControl(method = "repeatedcv", number = 5, repeats = 5)
+# str(da)
+model <- train(
+  BODYFAT ~ ., 
+  data = train_data, 
+  method = "lm",
+  trControl = ctrl
+)
+model
+print(error_per(model = model, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 3))
+print(error_per(model = model, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 5))
+print(error_per(model = model, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 7))
+```
+
+
+## AIC
+
+```{r}
+initial_model <- lm(BODYFAT~ ., data = train_data)
+step_model_aic <- step(initial_model, direction = "backward", trace = FALSE, k = 2)
+summary(step_model_aic)
+
+print(error_per(model = step_model_aic, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 3))
+print(error_per(model = step_model_aic, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 5))
+print(error_per(model = step_model_aic, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 7))
+```
+
+## BIC
+
+```{r}
+
+step_model_bic <- step(initial_model, direction = "backward", trace = FALSE, k = log(nrow(da)))
+summary(step_model_bic)
+
+print(error_per(model = step_model_bic, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 3))
+print(error_per(model = step_model_bic, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 5))
+print(error_per(model = step_model_bic, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 7))
+```
+
+## Select 3 features
+
+```{r}
+model_with3 <- train(
+  BODYFAT ~ ABDOMEN + WRIST + WEIGHT, 
+  data = train_data, 
+  method = "lm",
+  trControl = ctrl
+)
+model_with3
+print(error_per(model = model_with3, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 3))
+print(error_per(model = model_with3, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 5))
+print(error_per(model = model_with3, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 7))
+```
+#### scatter plot of the fitted value
+
+```{r}
+len_test_data <- dim(test_data)[1]
+x <- c(1:len_test_data)
+length(x)
+predict_y_aic <- predict(step_model_aic,test_data[,-1])
+error_aic <-  test_data$BODYFAT - predict_y_aic 
+# summary(error_aic)
+col_aic <- c(1:len_test_data)
+for (i in 1:len_test_data){
+  if (abs(error_aic[i]) <=3){
+    col_aic[i] = "green"
+  }else if (abs(error_aic[i]) <=5){
+    col_aic[i] = "blue"
+  }
+  else if (abs(error_aic[i]) <=7){
+    col_aic[i] = "orange"
+  }else{
+    col_aic[i] = "red"
+  }
+}
+
+df_aic <- data.frame(
+  error = error_aic,
+  color = col_aic,
+  x = x
+)
+
+p_1 <- ggplot(df_aic, aes(x = x, y = error, color = color)) +
+  geom_point() +
+  ylim(c(-15,10)) +
+  labs(title = "AIC model", x = "samples", y = "prediction error") +
+  geom_hline(yintercept = c(3, -3, 5, -5, 7,-7), linetype="dashed", color="black") + 
+  scale_color_manual(values = c("blue" = "blue","green" = "green", "orange"="orange", "red" = "red"),
+                     labels = c("<=5%","<=3%", "<=7%", ">7%")) +
+  theme_minimal() + 
+  theme(legend.position = "none")  # This line should be the last theme-related line.
+```
+
+#### scatter plot of 3 features
+```{r}
+
+predict_y_3 <- predict(model_with3,test_data[,-1])
+error_3 <-  test_data$BODYFAT - predict_y_3
+# summary(error_aic)
+col_3 <- c(1:len_test_data)
+for (i in 1:len_test_data){
+  if (abs(error_3[i]) <=3){
+    col_3[i] = "green"
+  }else if (abs(error_3[i]) <=5){
+    col_3[i] = "blue"
+  }
+  else if (abs(error_3[i]) <=7){
+    col_3[i] = "orange"
+  }else{
+    col_3[i] = "red"
+  }
+}
+
+df_3 <- data.frame(
+  error = error_3,
+  color = col_3,
+  x = x
+)
+
+p_2 <- ggplot(df_3, aes(x = x, y = error, color = color)) +
+  geom_point() +
+  labs(title = "ABDOMEN + WRIST + WEIGHT", x = "samples", y = "prediction error") +
+  ylim(c(-15,10))+
+  geom_hline(yintercept = c(3, -3, 5, -5, 7,-7), linetype="dashed", color="black") + 
+  scale_color_manual(values = c("blue" = "blue","green" = "green", "orange"="orange", "red" = "red"),
+                     labels = c("<=5%","<=3%", "<=7%", ">7%")) +
+  theme_minimal()+
+  theme(legend.position = "right")
+
+# print(p_1+p_2)
+combined_plot <- (p_1 + p_2) + plot_layout(guides = 'collect') +
+                 plot_annotation(tag_levels = 'A', title = "Scatter Plot of Prediction Error")
+combined_plot
+
+ggsave("prediction error.png", plot=combined_plot, width=7, height=7)
+```
+
+#### QQ plot
+```{r}
+# png(filename = "qqplots.png", width = 800, height = 400)
+par(mfrow = c(1, 2))
+
+
+qqnorm(residuals(step_model_aic), main="Model AIC Residuals")
+qqline(residuals(step_model_aic))
+
+qqnorm(residuals(model_with3), main="3 Features Model Residuals")
+qqline(residuals(model_with3))
+```
+
+## PCA
+```{r}
+library(stats)
+
+df_scaled <- scale(train_data[,-1])  # Exclude the 'BODYFAT' 'DENSITY' column and standardize
+test_data_pca <- cbind(BODYFAT = test_data$BODYFAT, scale(test_data[,-1]))
+head(df_scaled)
+data_bind <- cbind(BODYFAT = train_data$BODYFAT, df_scaled)
+pca_result <- prcomp(train_data[,-1], scale = TRUE)
+variance_explained <- pca_result$sdev^2 / sum(pca_result$sdev^2)
+# Cumulative explained variance
+cumulative_variance <- cumsum(variance_explained)
+#scree plot
+plot(cumulative_variance, type = "b", xlab = "Number of Components", ylab = "Cumulative Explained Variance")
+summary(pca_result)
+# Scree plot to visualize the explained variance by each principal component
+plot(pca_result, type = "l", main = "Scree Plot")
+
+```
+
+```{r}
+num_components_to_keep <- 8  
+X_pca_train <- as.data.frame(predict(pca_result, newdata = df_scaled)[,1:num_components_to_keep])
+head(X_pca_train)
+
+X_pca_test <- as.data.frame(predict(pca_result, newdata = test_data_pca[,-1])[,1:num_components_to_keep])
+head(X_pca_test)
+```
+
+```{r}
+data_pca_train <- cbind(BODYFAT = train_data$BODYFAT, X_pca_train)
+data_pca_test  <- cbind(BODYFAT =  test_data$BODYFAT, X_pca_test)
+model_pca <- lm(BODYFAT ~ ., data = data_pca_train)
+summary(model)
+
+# predictions <- predict(model_pca, newdata = data_pca_test[,-1])
+print(error_per(model = model_pca, test_data = data_pca_test[,-1], test_y = data_pca_test$BODYFAT,n = 3))
+print(error_per(model = model_pca, test_data = data_pca_test[,-1], test_y = data_pca_test$BODYFAT,n = 5))
+print(error_per(model = model_pca, test_data = data_pca_test[,-1], test_y = data_pca_test$BODYFAT,n = 7))
+```
+## More complicated models
+
+### Random Forest
+
+```{r}
+nb_model <- train(
+  BODYFAT ~ ., 
+  data = train_data, 
+  method = "rf", 
+  trControl = ctrl
+)
+nb_model
+
+print(error_per(model = nb_model, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 3))
+print(error_per(model = nb_model, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 5))
+print(error_per(model = nb_model, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 7))
+```
+### regression tree
+
+```{r}
+model_tree <- train(BODYFAT ~ .,
+               data = train_data, 
+               method = "rpart", 
+               trControl = trainControl(method = "cv", number = 10))
+
+print(model_tree)
+
+print(error_per(model = model_tree, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 3))
+print(error_per(model = model_tree, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 5))
+print(error_per(model = model_tree, test_data = test_data[,-1], test_y = test_data$BODYFAT,n = 7))
+```
+

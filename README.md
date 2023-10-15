@@ -13,7 +13,7 @@ In the code folder you can find all our code.
 ## image
 The image folder contains all the images and tables we use for analysis and verification.
 ## Group 7
-This is the slide used for our in-class presentations.
+This is the slides used for our in-class presentation.
 ## Summary_Group7
 Our summary for the project. Contains all the important ideas and information.
 ## ShinyApp

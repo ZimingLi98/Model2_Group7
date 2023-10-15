@@ -11,11 +11,11 @@ In the code folder you can find all our code.
 * For pattern_explore_PCA.RMD and Model_Building.RMD, you need to download "data_cleaned.csv" from cleaned_data in the data folder. 
 * Although we have provided a link to ShinyApp, if you wish to run it locally, please download all files in the shiny folder to ensure proper operation.
 ## image
-The images folder contains all the images we use for analysis and verification.
-## slides
-Slide is used for our in-class presentations.
-## summary
-Our report for this project.
+The image folder contains all the images and tables we use for analysis and verification.
+## Grouop 7
+This is the slide used for our in-class presentations.
+## Summary_Group7
+Our summary for the project. Contains all the important ideas and information.
 ## ShinyApp
 The link for our ShinyApp:
 http://goshinya.shinyapps.io/ShinyApp

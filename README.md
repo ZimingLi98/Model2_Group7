@@ -1,8 +1,6 @@
 # Model2_Group7_BodyFat
 ## Group Member
-Baiheng Chen,
-Wanxin Tu,
-Ziming Li,
+Baiheng Chen, Wanxin Tu, Ziming Li
 ## Introduction
 Our project is about the prediction of body fat percentage. The files in this repository include our data cleaning, model training, ShinyApp, and etc.
 ## data

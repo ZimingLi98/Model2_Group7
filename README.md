@@ -12,7 +12,7 @@ In the code folder you can find all our code.
 * Although we have provided a link to ShinyApp, if you wish to run it locally, please download all files in the shiny folder to ensure proper operation.
 ## image
 The image folder contains all the images and tables we use for analysis and verification.
-## Grouop 7
+## Group 7
 This is the slide used for our in-class presentations.
 ## Summary_Group7
 Our summary for the project. Contains all the important ideas and information.

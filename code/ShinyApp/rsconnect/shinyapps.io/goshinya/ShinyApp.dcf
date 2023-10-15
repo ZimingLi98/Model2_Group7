@@ -1,0 +1,12 @@
+name: ShinyApp
+title: ShinyApp
+username: goshinya
+account: goshinya
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10193308
+bundleId: 7804170
+url: https://goshinya.shinyapps.io/ShinyApp/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

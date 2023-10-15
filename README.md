@@ -4,11 +4,11 @@ Baiheng Chen, Wanxin Tu, Ziming Li
 ## Introduction
 Our project is about the prediction of body fat percentage. The files in this repository include our data cleaning, model training, ShinyApp, and etc.
 ## data
-The data folder contains our original data and cleaned data.
+The data folder contains our original data(BodyFat.csv) and cleaned data(data_cleaned.csv).
 ## code
 In the code folder you can find all our code. 
-* For data cleaning, in order to run the ipynb file normally, you need to download "BodyFat.csv" from row_data in the data folder. 
-* For pattern_explore_PCA.RMD and Model_Building.RMD, you need to download "data_cleaned.csv" from cleaned_data in the data folder. 
+* For data cleaning, in order to run the ipynb file normally, you need to download "BodyFat.csv" from the data folder. 
+* For pattern_explore_PCA.RMD and Model_Building.RMD, you need to download "data_cleaned.csv" from the data folder. 
 * Although we have provided a link to ShinyApp, if you wish to run it locally, please download all files in the shiny folder to ensure proper operation.
 ## image
 The image folder contains all the images and tables we use for analysis and verification.

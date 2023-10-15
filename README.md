@@ -20,7 +20,7 @@ Our summary for the project. Contains all the important ideas and information.
 The link for our ShinyApp:
 http://goshinya.shinyapps.io/ShinyApp
 ## Other sources
-Some of our code are based on OpenAI's GPT-4 model.
-Access Date: 2023-10
-Prompt Used: It appears when I run the code. . . for the error, here is my source code. . . , please help me debug to ensure normal operation.
-Note: The responsibility for the correctness and accuracy of this code remains with the user. 
+* Some of our code are based on OpenAI's GPT-4 model.
+* Access Date: 2023-10
+* Prompt Used: It appears when I run the code. . . for the error, here is my source code. . . , please help me debug to ensure normal operation.
+* Note: The responsibility for the correctness and accuracy of this code remains with the user. 
